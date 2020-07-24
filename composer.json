@@ -1,0 +1,24 @@
+{
+    "name": "netpc/yii2-ueditor",
+    "description": "yii2整合ueditor富文本编辑器",
+    "type": "yii2-extension",
+    "keywords": ["yii2","extension","ueditor","netpc"],
+    "license": "MIT",
+    "support": {
+        "source": "https://github.com/netpc-ken/yii2-ueditor"
+    },
+    "authors": [
+        {
+            "name": "ken",
+            "email": "admin@netpc.com.cn"
+        }
+    ],
+    "require": {
+        "yiisoft/yii2": "~2.0.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "netpc\\ueditor\\": ""
+        }
+    }
+}
