@@ -7,7 +7,13 @@
 namespace netpc\ueditor;
 
 /**
- * This is just an example.
+ * UEditor Widgetæ‰©å±•
+ * @author ken<admin@netpc.com.cn>
+ * @link www.netpc.com.cn
+ *
+ * UEditor 1.4.3.3
+ * Yii ç‰ˆæœ¬ 2.0+
+ * Chorme firefox
  */
 
 use yii\helpers\Html;
@@ -17,11 +23,13 @@ use yii\widgets\InputWidget;
 class UEditor extends InputWidget
 {
 	public $attributes;
+	//é…ç½®é€‰é¡¹ï¼Œå‰åŽç«¯é€šä¿¡ç›¸å…³çš„é…ç½®
+	public $config = [];
 
 	public function init()
 	{
-		//print_r($this->id);exit;
-		//Ä¬ÈÏname
+		//print_r($this->attribute);exit;
+		//é»˜è®¤name
 		if (!isset($this->name)) {
 			$this->name = 'content';
 		}
@@ -33,22 +41,22 @@ class UEditor extends InputWidget
 		$view = $this->getView();
 
 		$this->attributes['id'] = $this->id;
-		//ÊÇ·ñActiveFormÖÐµ÷ÓÃ
+		//æ˜¯å¦ActiveFormä¸­è°ƒç”¨
 		if ($this->hasModel()) {
 			$input = Html::activeTextarea($this->model, $this->attribute, $this->attributes);
 		} else {
-			$input = Html::textarea($this->name, '', $this->attributes);
+			$input = Html::textarea($this->name, $this->value, $this->attributes);
 		}
-		UeditorAsset::register($view);//½«UeditorÓÃµ½µÄ½Å±¾×ÊÔ´Êä³öµ½ÊÓÍ¼
-		$js = 'var ue = UE.getEditor("' . $this->id . '",' . $this->getOptions() . ');';//Ueditor³õÊ¼»¯½Å±¾
-		$view->registerJs($js, $view::POS_READY);//½«Ueditor³õÊ¼»¯½Å±¾Ò²ÏìÓ¦µ½ÊÓÍ¼ÖÐ
+		UeditorAsset::register($view);//å°†Ueditorç”¨åˆ°çš„è„šæœ¬èµ„æºè¾“å‡ºåˆ°è§†å›¾
+		$js = 'var ue = UE.getEditor("' . $this->id . '",' . $this->getOptions() . ');';//Ueditoråˆå§‹åŒ–è„šæœ¬
+		$view->registerJs($js, $view::POS_READY);//å°†Ueditoråˆå§‹åŒ–è„šæœ¬ä¹Ÿå“åº”åˆ°è§†å›¾ä¸­
 		return $input;
 
 	}
 
 	public function getOptions()
 	{
-		unset($this->options['id']);//UeditorÊ¶±ð²»ÁËidÊôÐÔ,¹Ê¶øÉ¾Ö®
+		unset($this->options['id']);//Ueditorè¯†åˆ«ä¸äº†idå±žæ€§,æ•…è€Œåˆ ä¹‹
 		return Json::encode($this->options);
 	}
 }
