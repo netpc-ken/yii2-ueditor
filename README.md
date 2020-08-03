@@ -35,7 +35,7 @@ to the require section of your `composer.json` file.
 Update
 -----
 ```
- composer update netpc/yii2-ueditor
+ composer require netpc/yii2-ueditor
 ```
 Usage
 -----
