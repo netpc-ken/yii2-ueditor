@@ -9,6 +9,7 @@ namespace netpc\ueditor;
 use yii;
 use yii\web\Controller;
 use yii\web\Response;
+use yii\imagine\Image;
 
 /**
  * Class UEditorController
@@ -25,12 +26,24 @@ class UEditorController extends Controller
 
 	/**
 	 * 水印参数
-	 * ['path'=>'水印图片位置','position'=>9]
-	 * ['text'=>'水印文本内容','position'=>9]
-	 * position in [1 ,9]，表示从左上到右下的9个位置， 默认位置为 9。
+	 * ['path'=>'水印图片位置']
+	 * ['text'=>'水印文本内容']
+	 * ['quality'=>'压缩质量']
+	 * ['fontsize'=>'字体大小']
+	 * ['fontpath'=>'字体路径']
+	 * ['fontcolor'=>'字体颜色']
+	 * ['point'=>'偏移坐标']
+	 * ['center'=>'是否居中']
 	 * @var array
 	 */
 	public $watermark = [];
+	/**
+	 * 修改尺寸参数
+	 * ['width'=>'宽度']
+	 * ['height'=>'高度']
+	 * @var array
+	 */
+	public $resize = [];
 
 	public function init()
 	{
@@ -42,29 +55,28 @@ class UEditorController extends Controller
 		error_reporting(E_ERROR);
 		header("Content-Type: text/html; charset=utf-8");
 
-		//CSRF 基于 POST 验证，UEditor 无法添加自定义 POST 数据，同时由于这里不会产生安全问题，故简单粗暴地取消 CSRF 验证。
-		//如需 CSRF 防御，可以使用 server_param 方法，然后在这里将 Get 的 CSRF 添加到 POST 的数组中。。。
+		//关闭CSRF Controller可以使用url控制路由权限来保证安全
 		Yii::$app->request->enableCsrfValidation = false;
 
-		//当客户使用低版本IE时，会使用swf上传插件，维持认证状态可以参考文档UEditor「自定义请求参数」部分。
+		//自定义请求参数
 		//http://fex.baidu.com/ueditor/#server-server_param
 
 		//保留UE默认的配置引入方式
-		if (file_exists(__DIR__ . '/config.json'))
+		if (file_exists(__DIR__ . '/config.json')) {
 			$CONFIG = json_decode(preg_replace("/\/\*[\s\S]+?\*\//", '', file_get_contents(__DIR__ . '/config.json')), true);
-		else
+		} else {
 			$CONFIG = [];
+		}
 
-		if (!is_array($this->config))
+		if (!is_array($this->config)) {
 			$this->config = [];
+		}
 
-		if (!is_array($CONFIG))
+		if (!is_array($CONFIG)) {
 			$CONFIG = [];
+		}
 
 		$this->config = $this->config + $CONFIG;
-		// $this->webroot = Yii::getAlias('@webroot');
-		// if (!is_array($this->thumbnail))
-		// 	$this->thumbnail = false;
 	}
 
 	/**
@@ -90,11 +102,6 @@ class UEditorController extends Controller
 			Yii::$app->response->format = Response::FORMAT_JSON;
 		}
 		return $this->run($action);
-
-		// if (isset($actions[$action]))
-		// 	return $this->run($actions[$action]);
-		// else
-		// 	return ['state' => 'Unknown action.'];
 	}
 
 	/**
@@ -210,8 +217,8 @@ class UEditorController extends Controller
 		}
 
 		foreach ($source as $imgUrl) {
-			$item = new Uploader($imgUrl, $config, "remote");
-			$info = $item->getFileInfo();
+			$info = $this->upload($imgUrl, $config, "remote");
+			//$info = $item->getFileInfo();
 			array_push($list, array(
 				"state" => $info["state"],
 				"url" => $info["url"],
@@ -308,7 +315,7 @@ class UEditorController extends Controller
 	}
 
 	/**
-	 * 各种上传
+	 * 各种上传处理
 	 * @param $fieldName
 	 * @param $config
 	 * @param $base64
@@ -318,6 +325,88 @@ class UEditorController extends Controller
 	{
 		/* 生成上传实例对象并完成上传 */
 		$up = new Uploader($fieldName, $config, $base64);
+		$file_info = $up->getFileInfo();
+		if ($file_info['state'] == 'SUCCESS' && in_array($file_info['type'], ['.png', '.jpg', '.jpeg', '.bmp', '.gif'])) {
+			//echo $_SERVER['DOCUMENT_ROOT'].$file_info['url'];exit;
+			//是否安装yii2官方扩展yiisoft/yii2-imagine
+			if (class_exists('yii\imagine\Image')) {
+				if (isset($this->watermark['path']) or isset($this->watermark['text']) or isset($this->resize)) {
+					$image = $_SERVER['DOCUMENT_ROOT'] . $file_info['url'];
+					$quality = isset($this->watermark['quality']) ? $this->watermark['quality'] : 75;
+					$limit_width = isset($this->watermark['width']) ? $this->watermark['width'] : 100;
+					$limit_height = isset($this->watermark['height']) ? $this->watermark['height'] : 100;
+					$point = isset($this->watermark['point']) ? $this->watermark['point'] : [0, 0];
+					$center = isset($this->watermark['center']) ? $this->watermark['center'] : false;
+					$image_old = $image;
+					if (is_resource($image)) {
+						$img = Image::getImagine()->read($image);
+					}
+					if (is_string($image)) {
+						$img = Image::getImagine()->open(Yii::getAlias($image));
+					}
+					//获取图片宽高尺寸
+					$size = $img->getSize();
+					$width = $size->getWidth();
+					$height = $size->getHeight();
+					//修改尺寸
+					if (isset($this->resize)) {
+						if (($this->resize['width'] > 0 or $this->resize['height'] > 0) && $this->resize['width'] < $width && $this->resize['height'] < $height) {
+							//修改尺寸
+							$image = Image::resize($image, $this->resize['width'], $this->resize['height']);
+						}
+					}
+					if ($point[0] < 0 or $point[1] < 0 or $center) {
+						//如果改变尺寸重新获取图片宽高尺寸
+						if (is_object($image)) {
+							$img = $image;
+							$size = $img->getSize();
+							$width = $size->getWidth();
+							$height = $size->getHeight();
+						}
+
+						//居中
+						if ($center) {
+							$point[0] = $point[0] + ($width / 2);
+							$point[1] = $point[1] + ($height / 2);
+						} else {
+							if ($point[0] < 0) {
+								$point[0] = $point[0] + $width;
+							}
+							if ($point[1] < 0) {
+								$point[1] = $point[1] + $height;
+							}
+						}
+					}
+
+					//图片水印
+					if (isset($this->watermark['path']) && $width >= $limit_width && $height >= $limit_height) {
+						if(file_exists(Yii::getAlias($this->watermark['path']))){
+							$image = Image::watermark($image, $this->watermark['path'], $point);
+						}else{
+							return ['watermark file not find'];
+						}
+					}
+					//文字水印 Alibaba-PuHuiTi-Heavy.otf不到2m免费商用
+					if (isset($this->watermark['text']) && $width >= $limit_width && $height >= $limit_height) {
+						$color = isset($this->watermark['fontcolor']) ? $this->watermark['fontcolor'] : '#000000';
+						$size = isset($this->watermark['fontsize']) ? $this->watermark['fontsize'] : 14;
+						$image = Image::text($image, $this->watermark['text'], '@vendor/netpc/yii2-ueditor/assets/fonts/Alibaba-PuHuiTi-Heavy.otf', $point, ['color' => $color, 'size' => $size]);
+					}
+					if (is_object($image)) {
+						$image->save($image_old, ['quality' => $quality]);
+					}
+
+					//裁剪
+					//Image::crop($image, 120 , 120, [0, 0])->save($image, ['quality' => $quality]);
+					//略图
+					//Image::thumbnail($image, 120, 120 ,\Imagine\Image\ManipulatorInterface::THUMBNAIL_INSET)->save($image, ['quality' => $quality]);
+					//旋转
+					//Image::frame($image, 5, '666', 0)->rotate(-8)->save($image, ['quality' => $quality]);//裁剪从坐标0,60 裁剪一张300 x 20 的图片,并保存为1-crop-point.jpg
+				}
+			} else {
+				$file_info['msg'] = "intall composer require --prefer-dist yiisoft/yii2-imagine";
+			}
+		}
 
 		/**
 		 * 得到上传文件所对应的各个参数,数组结构
@@ -332,6 +421,6 @@ class UEditorController extends Controller
 		 */
 
 		/* 返回数据 */
-		return $up->getFileInfo();
+		return $file_info;
 	}
 }

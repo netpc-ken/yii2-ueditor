@@ -23,17 +23,26 @@ use yii\widgets\InputWidget;
 class UEditor extends InputWidget
 {
 	public $attributes;
-	//配置选项，前后端通信相关的配置
-	public $config = [];
 
 	public function init()
 	{
 		//print_r($this->attribute);exit;
 		//默认name
 		if (!isset($this->name)) {
-			$this->name = 'content';
+			$this->name = $this->id;
 		}
 		parent::init();
+		if (empty($this->options['serverUrl']))
+			$this->options['serverUrl'] = ['/ueditor/index'];
+
+		if (empty($this->options['lang']))
+			$this->options['lang'] = 'zh-cn';
+
+		if (empty($this->options['initialFrameHeight']))
+			$this->options['initialFrameHeight'] = 500;
+
+		if (empty($this->options['initialFrameWidth']))
+			$this->options['initialFrameWidth'] = '100%';
 	}
 
 	public function run()
