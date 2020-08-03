@@ -401,7 +401,7 @@ class UEditorController extends Controller
 					//略图
 					//Image::thumbnail($image, 120, 120 ,\Imagine\Image\ManipulatorInterface::THUMBNAIL_INSET)->save($image, ['quality' => $quality]);
 					//旋转
-					//Image::frame($image, 5, '666', 0)->rotate(-8)->save($image, ['quality' => $quality]);//裁剪从坐标0,60 裁剪一张300 x 20 的图片,并保存为1-crop-point.jpg
+					//Image::frame($image, 5, '666', 0)->rotate(-8)->save($image, ['quality' => $quality]);
 				}
 			} else {
 				$file_info['msg'] = "intall composer require --prefer-dist yiisoft/yii2-imagine";
