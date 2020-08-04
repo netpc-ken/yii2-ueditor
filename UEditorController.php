@@ -77,6 +77,13 @@ class UEditorController extends Controller
 		}
 
 		$this->config = $this->config + $CONFIG;
+
+		if (empty($this->config['webroot'])) {
+			$this->config['webroot'] = $_SERVER['DOCUMENT_ROOT'];
+		} else {
+			Yii::setAlias('@DOCUMENT_ROOT', $this->config['webroot']);
+		}
+
 	}
 
 	/**
@@ -252,7 +259,7 @@ class UEditorController extends Controller
 		$end = $start + $size;
 
 		/* 获取文件列表 */
-		$path = $_SERVER['DOCUMENT_ROOT'] . (substr($path, 0, 1) == '/' ? '' : '/') . $path;
+		$path = $this->config['webroot'] . (substr($path, 0, 1) == '/' ? '' : '/') . $path;
 		$files = $this->getFiles($path, $allowFiles);
 		if (!count($files)) {
 			$result = [
@@ -304,7 +311,7 @@ class UEditorController extends Controller
 				} else {
 					if (preg_match("/\.(" . $allowFiles . ")$/i", $file)) {
 						$files[] = array(
-							'url' => substr($path2, strlen($_SERVER['DOCUMENT_ROOT'])),
+							'url' => substr($path2, strlen($this->config['webroot'])),
 							'mtime' => filemtime($path2)
 						);
 					}
@@ -327,11 +334,11 @@ class UEditorController extends Controller
 		$up = new Uploader($fieldName, $config, $base64);
 		$file_info = $up->getFileInfo();
 		if ($file_info['state'] == 'SUCCESS' && in_array($file_info['type'], ['.png', '.jpg', '.jpeg', '.bmp', '.gif'])) {
-			//echo $_SERVER['DOCUMENT_ROOT'].$file_info['url'];exit;
+			//echo $this->config['webroot'].$file_info['url'];exit;
 			//是否安装yii2官方扩展yiisoft/yii2-imagine
 			if (class_exists('yii\imagine\Image')) {
 				if (isset($this->watermark['path']) or isset($this->watermark['text']) or isset($this->resize)) {
-					$image = $_SERVER['DOCUMENT_ROOT'] . $file_info['url'];
+					$image = $this->config['webroot'] . $file_info['url'];
 					$quality = isset($this->watermark['quality']) ? $this->watermark['quality'] : 75;
 					$limit_width = isset($this->watermark['width']) ? $this->watermark['width'] : 100;
 					$limit_height = isset($this->watermark['height']) ? $this->watermark['height'] : 100;
@@ -380,9 +387,9 @@ class UEditorController extends Controller
 
 					//图片水印
 					if (isset($this->watermark['path']) && $width >= $limit_width && $height >= $limit_height) {
-						if(file_exists(Yii::getAlias($this->watermark['path']))){
+						if (file_exists(Yii::getAlias($this->watermark['path']))) {
 							$image = Image::watermark($image, $this->watermark['path'], $point);
-						}else{
+						} else {
 							return ['watermark file not find'];
 						}
 					}
@@ -390,7 +397,8 @@ class UEditorController extends Controller
 					if (isset($this->watermark['text']) && $width >= $limit_width && $height >= $limit_height) {
 						$color = isset($this->watermark['fontcolor']) ? $this->watermark['fontcolor'] : '#000000';
 						$size = isset($this->watermark['fontsize']) ? $this->watermark['fontsize'] : 14;
-						$image = Image::text($image, $this->watermark['text'], '@vendor/netpc/yii2-ueditor/assets/fonts/Alibaba-PuHuiTi-Heavy.otf', $point, ['color' => $color, 'size' => $size]);
+						$path = isset($this->watermark['fontpath']) ? $this->watermark['fontpath'] : '@vendor/netpc/yii2-ueditor/assets/fonts/Alibaba-PuHuiTi-Heavy.otf';
+						$image = Image::text($image, $this->watermark['text'], $path, $point, ['color' => $color, 'size' => $size]);
 					}
 					if (is_object($image)) {
 						$image->save($image_old, ['quality' => $quality]);

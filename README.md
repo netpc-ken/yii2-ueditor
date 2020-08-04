@@ -92,8 +92,14 @@ use netpc\ueditor\UEditor;
 
 后端处理:
 
-通过配置controllerMap路由映射到对应的控制器上
+通过配置controllerMap路由映射到对应的控制器上<br>
 如下：ueditor/index映射到'netpc\ueditor\UEditorController'
+
+有时候后台管理项目backend上传图片和文件等附件，是需要放到前端项目frontend的web目录下，或其它前端项目。
+
+这时候可以配置参数config['webroot']上传目录路径，不设置默认上传到当前项目web目录。<br>
+配合imageUrlPrefix设置图片访问路径前缀可以实现图片独立域名
+
 ```php
 <?php
 $config = [
@@ -115,7 +121,12 @@ $config = [
 				'videoPathFormat' => '/upload/video/{yyyy}{mm}{dd}/{time}{rand:6}',//视频
 				'filePathFormat' => '/upload/file/{yyyy}{mm}{dd}/{rand:4}_{filename}',//文件文档
 				'imageManagerListPath' => '/upload/image/',//图片管理列表
+				//'imageUrlPrefix' => '//img.netpc.com.cn',//图片访问路径前缀
+				//'imageManagerUrlPrefix' => '//img.netpc.com.cn',//图片管理列表访问路径前缀
 				'fileManagerListPath' => '/upload/file/',//文件管理列表
+				// 'fileUrlPrefix' => '//file.netpc.com.cn',//图片访问路径前缀
+				// 'fileManagerUrlPrefix' => '//file.netpc.com.cn',//文件管理列表访问路径前缀
+				// 'webroot' => Yii::getAlias('@frontend/web'),//上传图片文件根目录 默认是当前项目Web
 			],
 			'resize' => [//修改尺寸，上传图片自动修改为600像素宽度
 				'width' => 600,//小于600不处理
@@ -126,7 +137,7 @@ $config = [
 				'text' => 'netpc.com.cn测试', //文字水印内容
 				//'quality' => 90, //压缩质量
 				//'fontsize' => 50, //字体大小 默认14
-				//'fontpath'=> '@vendor/netpc/yii2-ueditor/assets/fonts/Alibaba-PuHuiTi-Heavy.otf',//字体路径 '@webroot/fonts/xxx.ttf'
+				//'fontpath'=> '@webroot/fonts/xxx.ttf',//字体路径 默认Alibaba-PuHuiTi-Heavy.otf不到2m免费商用
 				//'fontcolor'=> '#000000',//字体颜色 默认#000000
 				'point' => [-80, -10],//x,y对应width,height 正数实际像素移动 负数图片宽、高减去像素移动 [10, -30]左下 [-200, 10]右上 [-200, -30] 右下
 				'center' => true,//当center为真时以图片中心点为开始根据point正负偏移，正右移动，负左移动。
